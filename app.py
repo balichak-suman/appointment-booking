@@ -737,7 +737,9 @@ def start_reschedule(user_id: str, appointment_id: str):
     send_date_buttons(user_id, doctor_id)
 
 if __name__ == '__main__':
-    print(f"Server running on port {config.PORT}")
+    import os
+    port = int(os.environ.get('PORT', config.PORT))
+    print(f"Server running on port {port}")
     print(f"Loaded {len(doctor_service.get_all_doctors())} doctors")
     print(f"Google Calendar: {'Enabled' if google_calendar_service.service else 'Disabled (credentials.json not found)'}")
-    app.run(host='0.0.0.0', port=config.PORT, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)
