@@ -1,4 +1,12 @@
-# Add these functions at the end of app.py before if __name__ == "__main__":
+from whatsapp_client import WhatsAppClient
+from appointment_manager import AppointmentManager
+from google_calendar_service import GoogleCalendarService
+from doctor_service import DoctorService
+
+whatsapp_client = WhatsAppClient()
+appointment_manager = AppointmentManager()
+google_calendar_service = GoogleCalendarService()
+doctor_service = DoctorService()
 
 def show_user_appointments(user_id: str):
     """Show user's upcoming appointments"""
@@ -26,10 +34,11 @@ def show_user_appointments(user_id: str):
         whatsapp_client.send_message(user_id, "You don't have any upcoming appointments to cancel.")
         return
     
-    # Create list of appointments
+    # Create list of appointments with unique IDs
     rows = []
-    for apt in upcoming:
-        doctor_name = apt.get('doctor_name', 'Unknown Doctor')
+    for idx, apt in enumerate(upcoming):
+        # Use camelCase keys to match appointment data structure
+        doctor_name = apt.get('doctorName', 'Unknown Doctor')
         date = apt.get('date')
         time = apt.get('time')
         
@@ -41,11 +50,11 @@ def show_user_appointments(user_id: str):
         time_obj = datetime.strptime(time, "%H:%M")
         formatted_time = time_obj.strftime("%I:%M %p")
         
-        # Create unique ID for this appointment
-        apt_id = f"{apt.get('doctor_id')}_{date}_{time}"
+        # Use appointment ID directly with index to ensure uniqueness
+        apt_id = apt.get('id')
         
         rows.append({
-            "id": f"cancel_{apt_id}",
+            "id": f"cancel_{apt_id}_{idx}",
             "title": f"{doctor_name}",
             "description": f"{formatted_date} at {formatted_time}"
         })
@@ -62,28 +71,35 @@ def show_user_appointments(user_id: str):
 
 def cancel_appointment(user_id: str, appointment_id: str):
     """Cancel a specific appointment"""
-    # Parse appointment ID
+    # The appointment_id comes as "cancel_apt_id_index"
+    # Remove the index (last part after splitting by _)
     parts = appointment_id.split("_")
-    if len(parts) < 3:
+    
+    if len(parts) < 2:
         whatsapp_client.send_message(user_id, "Error: Invalid appointment ID")
         return
     
-    doctor_id = parts[0]
-    date = parts[1]
-    time = parts[2]
+    # Remove the index (last part) to get the actual appointment ID
+    actual_apt_id = "_".join(parts[:-1])
     
     # Get appointment details
     appointments = appointment_manager.get_user_appointments(user_id)
     appointment = None
     
+    # Use camelCase keys to match appointment data structure
     for apt in appointments:
-        if apt.get('doctor_id') == doctor_id and apt.get('date') == date and apt.get('time') == time:
+        if apt.get('id') == actual_apt_id:
             appointment = apt
             break
     
     if not appointment:
         whatsapp_client.send_message(user_id, "Appointment not found.")
         return
+    
+    # Get appointment details for deletion
+    doctor_id = appointment.get('doctorId')
+    date = appointment.get('date')
+    time = appointment.get('time')
     
     # Delete from Google Calendar
     doctor = doctor_service.get_doctor_by_id(doctor_id)
@@ -92,11 +108,11 @@ def cancel_appointment(user_id: str, appointment_id: str):
         if calendar_id:
             google_calendar_service.delete_event(calendar_id, date, time)
     
-    # Delete from local storage
-    success = appointment_manager.cancel_appointment(user_id, doctor_id, date, time)
+    # Delete from local storage using appointment ID
+    success = appointment_manager.cancel_appointment(actual_apt_id)
     
     if success:
-        doctor_name = appointment.get('doctor_name', 'Unknown Doctor')
+        doctor_name = appointment.get('doctorName', 'Unknown Doctor')
         whatsapp_client.send_message(
             user_id,
             f"✅ Appointment cancelled successfully!\n\n"

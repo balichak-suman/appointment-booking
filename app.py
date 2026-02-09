@@ -4,6 +4,7 @@ from whatsapp_client import whatsapp_client
 from appointment_manager import appointment_manager
 from doctor_service import doctor_service
 from google_calendar_service import google_calendar_service
+from cancel_functions import show_user_appointments, cancel_appointment
 from datetime import datetime, timedelta
 
 import logging
@@ -106,27 +107,21 @@ def handle_incoming_message(user_id: str, user_name: str, text: str, button_id: 
     """Handle incoming message or button click"""
     session = appointment_manager.get_session(user_id)
     
-    # If user sent text and not in a flow, check for booking intent
-    if text and session["step"] == "idle":
-        text_lower = text.lower()
-        if any(word in text_lower for word in ['book', 'appointment', 'doctor', 'schedule']):
-            # Start booking flow
-            appointment_manager.update_session(user_id, {
-                "step": "awaiting_specialization",
-                "tempData": {"userName": user_name}
-            })
-            send_specialization_list(user_id)
-        else:
-            # Welcome message with Book, Cancel, and Reschedule options as buttons
-            whatsapp_client.send_interactive_buttons(
-                user_id,
-                "Welcome to Hospital Appointment Booking!\n\nWhat would you like to do?",
-                [
-                    {"id": "book_appointment", "title": "📅 Book Appointment"},
-                    {"id": "cancel_appointment", "title": "❌ Cancel"},
-                    {"id": "reschedule_appointment", "title": "🔄 Reschedule"}
-                ]
-            )
+    # If user sent text (not a button/list selection), reset conversation
+    if text and not button_id:
+        # Clear any existing session
+        appointment_manager.clear_session(user_id)
+        
+        # Show welcome message
+        whatsapp_client.send_interactive_buttons(
+            user_id,
+            "Welcome to Hospital Appointment Booking!\n\nWhat would you like to do?",
+            [
+                {"id": "book_appointment", "title": "Book Appointment"},
+                {"id": "reschedule_appointment", "title": "Reschedule"},
+                {"id": "cancel_appointment", "title": "Cancel Appointment"}
+            ]
+        )
         return
     
     # Handle button/list selections
@@ -452,6 +447,47 @@ def handle_button_selection(user_id: str, user_name: str, button_id: str, sessio
                 new_date = session["tempData"].get("new_date")
                 appointment_id = session["tempData"].get("appointment_id")
                 
+                # Validation 1: Check if user already has appointment with this doctor on this date
+                existing_appointments = appointment_manager.get_user_appointments(user_id)
+                has_same_doctor_same_day = any(
+                    apt.get('doctorId') == doctor_id and 
+                    apt.get('date') == new_date and
+                    apt.get('id') != appointment_id  # Exclude the one being rescheduled
+                    for apt in existing_appointments
+                )
+                
+                if has_same_doctor_same_day:
+                    whatsapp_client.send_message(
+                        user_id,
+                        f"❌ You already have an appointment with {doctor_name} on {new_date}.\n\n"
+                        f"You can only book one appointment per day with the same doctor.\n\n"
+                        f"Please choose a different date."
+                    )
+                    return
+                
+                # Validation 2: Check if user has appointment with ANY doctor at this exact time
+                has_time_conflict = any(
+                    apt.get('date') == new_date and 
+                    apt.get('time') == time and
+                    apt.get('id') != appointment_id  # Exclude the one being rescheduled
+                    for apt in existing_appointments
+                )
+                
+                if has_time_conflict:
+                    conflicting_apt = next(
+                        apt for apt in existing_appointments 
+                        if apt.get('date') == new_date and apt.get('time') == time and apt.get('id') != appointment_id
+                    )
+                    conflicting_doctor = conflicting_apt.get('doctorName', 'another doctor')
+                    whatsapp_client.send_message(
+                        user_id,
+                        f"❌ You already have an appointment at {time} on {new_date} with {conflicting_doctor}.\n\n"
+                        f"You cannot have multiple appointments at the same time.\n\n"
+                        f"Please choose a different time slot."
+                    )
+                    return
+                
+                
                 # Delete old appointment from Google Calendar
                 doctor = doctor_service.get_doctor_by_id(doctor_id)
                 if doctor and google_calendar_service.service:
@@ -503,6 +539,43 @@ def handle_button_selection(user_id: str, user_name: str, button_id: str, sessio
                 # Normal booking flow
                 date = session["tempData"].get("date")
                 
+                # Validation 1: Check if user already has appointment with this doctor on this date
+                existing_appointments = appointment_manager.get_user_appointments(user_id)
+                has_same_doctor_same_day = any(
+                    apt.get('doctorId') == doctor_id and apt.get('date') == date
+                    for apt in existing_appointments
+                )
+                
+                if has_same_doctor_same_day:
+                    whatsapp_client.send_message(
+                        user_id,
+                        f"❌ You already have an appointment with {doctor_name} on {date}.\n\n"
+                        f"You can only book one appointment per day with the same doctor.\n\n"
+                        f"Please choose a different date or doctor."
+                    )
+                    return
+                
+                # Validation 2: Check if user has appointment with ANY doctor at this exact time
+                has_time_conflict = any(
+                    apt.get('date') == date and apt.get('time') == time
+                    for apt in existing_appointments
+                )
+                
+                if has_time_conflict:
+                    conflicting_apt = next(
+                        apt for apt in existing_appointments 
+                        if apt.get('date') == date and apt.get('time') == time
+                    )
+                    conflicting_doctor = conflicting_apt.get('doctorName', 'another doctor')
+                    whatsapp_client.send_message(
+                        user_id,
+                        f"❌ You already have an appointment at {time} on {date} with {conflicting_doctor}.\n\n"
+                        f"You cannot have multiple appointments at the same time.\n\n"
+                        f"Please choose a different time slot."
+                    )
+                    return
+                
+                
                 # Create appointment
                 appointment = appointment_manager.create_appointment(
                     user_id,
@@ -550,114 +623,6 @@ def handle_button_selection(user_id: str, user_name: str, button_id: str, sessio
             print(f"Error creating appointment: {e}")
             print(f"Full traceback: {error_details}")
             whatsapp_client.send_message(user_id, f"Sorry, there was an error creating your appointment.\n\nError: {str(e)}\n\nPlease try again.")
-
-def show_user_appointments(user_id: str):
-    """Show user's upcoming appointments"""
-    appointments = appointment_manager.get_user_appointments(user_id)
-    
-    if not appointments:
-        whatsapp_client.send_message(user_id, "You don't have any appointments to cancel.")
-        return
-    
-    # Filter upcoming appointments only
-    from datetime import datetime
-    today = datetime.now().strftime("%Y-%m-%d")
-    current_time = datetime.now().strftime("%H:%M")
-    
-    upcoming = []
-    for apt in appointments:
-        apt_date = apt.get('date')
-        apt_time = apt.get('time')
-        
-        # Include if date is in future, or today but time hasn't passed
-        if apt_date > today or (apt_date == today and apt_time > current_time):
-            upcoming.append(apt)
-    
-    if not upcoming:
-        whatsapp_client.send_message(user_id, "You don't have any upcoming appointments to cancel.")
-        return
-    
-    # Create list of appointments
-    rows = []
-    for apt in upcoming:
-        doctor_name = apt.get('doctor_name', 'Unknown Doctor')
-        date = apt.get('date')
-        time = apt.get('time')
-        
-        # Format date nicely
-        date_obj = datetime.strptime(date, "%Y-%m-%d")
-        formatted_date = date_obj.strftime("%d %B %Y")
-        
-        # Convert time to 12h format
-        time_obj = datetime.strptime(time, "%H:%M")
-        formatted_time = time_obj.strftime("%I:%M %p")
-        
-        # Create unique ID for this appointment
-        apt_id = f"{apt.get('doctor_id')}_{date}_{time}"
-        
-        rows.append({
-            "id": f"cancel_{apt_id}",
-            "title": f"{doctor_name}",
-            "description": f"{formatted_date} at {formatted_time}"
-        })
-    
-    sections = [{"title": "Appointments", "rows": rows}]
-    
-    whatsapp_client.send_interactive_list(
-        user_id,
-        "Cancel Appointment",
-        "Select an appointment to cancel:",
-        "View Appointments",
-        sections
-    )
-
-def cancel_appointment(user_id: str, appointment_id: str):
-    """Cancel a specific appointment"""
-    # Parse appointment ID
-    parts = appointment_id.split("_")
-    if len(parts) < 3:
-        whatsapp_client.send_message(user_id, "Error: Invalid appointment ID")
-        return
-    
-    doctor_id = parts[0]
-    date = parts[1]
-    time = parts[2]
-    
-    # Get appointment details
-    appointments = appointment_manager.get_user_appointments(user_id)
-    appointment = None
-    
-    for apt in appointments:
-        if apt.get('doctor_id') == doctor_id and apt.get('date') == date and apt.get('time') == time:
-            appointment = apt
-            break
-    
-    if not appointment:
-        whatsapp_client.send_message(user_id, "Appointment not found.")
-        return
-    
-    # Delete from Google Calendar
-    doctor = doctor_service.get_doctor_by_id(doctor_id)
-    if doctor and google_calendar_service.service:
-        calendar_id = doctor.get('google_calendar_id')
-        if calendar_id:
-            google_calendar_service.delete_event(calendar_id, date, time)
-    
-    # Delete from local storage
-    success = appointment_manager.cancel_appointment(user_id, doctor_id, date, time)
-    
-    if success:
-        doctor_name = appointment.get('doctor_name', 'Unknown Doctor')
-        whatsapp_client.send_message(
-            user_id,
-            f"✅ Appointment cancelled successfully!\n\n"
-            f"Doctor: {doctor_name}\n"
-            f"Date: {date}\n"
-            f"Time: {time}\n\n"
-            f"You can book a new appointment anytime."
-        )
-    else:
-        whatsapp_client.send_message(user_id, "Failed to cancel appointment. Please try again.")
 
 def show_appointments_for_reschedule(user_id: str):
     """Show user's upcoming appointments for rescheduling"""
