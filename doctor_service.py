@@ -90,6 +90,13 @@ class DoctorService:
                 print(f"Doctor {doctor['name']} doesn't work on {day_name}")
                 return []
             
+            # Get current time for filtering past slots
+            from datetime import datetime as dt
+            import pytz
+            timezone = pytz.timezone('Asia/Kolkata')  # Use your timezone
+            current_datetime = dt.now(timezone)
+            is_today = appointment_date.date() == current_datetime.date()
+            
             # Generate all possible slots
             work_start = datetime.strptime(doctor['working_hours']['start'], "%H:%M")
             work_end = datetime.strptime(doctor['working_hours']['end'], "%H:%M")
@@ -112,6 +119,14 @@ class DoctorService:
                     continue
                 
                 time_str = current_time.strftime("%H:%M")
+                
+                # Skip past time slots if booking for today
+                if is_today:
+                    slot_hour, slot_minute = map(int, time_str.split(':'))
+                    if (slot_hour < current_datetime.hour or 
+                        (slot_hour == current_datetime.hour and slot_minute <= current_datetime.minute)):
+                        current_time += slot_duration
+                        continue
                 
                 # Check if slot is already booked
                 is_booked = False
