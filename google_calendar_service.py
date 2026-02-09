@@ -17,19 +17,36 @@ class GoogleCalendarService:
     def initialize_service(self):
         """Initialize Google Calendar API service"""
         try:
-            if not os.path.exists(CREDENTIALS_FILE):
+            credentials = None
+            
+            # Try to load from environment variable first (for cloud deployment)
+            google_creds_json = os.environ.get('GOOGLE_CREDENTIALS')
+            if google_creds_json:
+                import json
+                creds_dict = json.loads(google_creds_json)
+                credentials = service_account.Credentials.from_service_account_info(
+                    creds_dict,
+                    scopes=['https://www.googleapis.com/auth/calendar']
+                )
+                print("Google Calendar credentials loaded from environment variable")
+            
+            # Fall back to credentials.json file (for local development)
+            elif os.path.exists(CREDENTIALS_FILE):
+                credentials = service_account.Credentials.from_service_account_file(
+                    CREDENTIALS_FILE,
+                    scopes=['https://www.googleapis.com/auth/calendar']
+                )
+                print("Google Calendar credentials loaded from file")
+            
+            else:
                 print(f"WARNING: {CREDENTIALS_FILE} not found. Google Calendar integration disabled.")
                 print("To enable Google Calendar:")
                 print("1. Go to https://console.cloud.google.com/")
                 print("2. Create a project and enable Google Calendar API")
                 print("3. Create a service account")
                 print("4. Download credentials.json and place it in the project root")
+                print("   OR set GOOGLE_CREDENTIALS environment variable with the JSON content")
                 return
-            
-            credentials = service_account.Credentials.from_service_account_file(
-                CREDENTIALS_FILE,
-                scopes=['https://www.googleapis.com/auth/calendar']
-            )
             
             self.service = build('calendar', 'v3', credentials=credentials)
             print("Google Calendar service initialized successfully")
