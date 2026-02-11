@@ -74,6 +74,17 @@ class DoctorService:
             booked_times = {apt['time'] for apt in booked_appointments}
             time_slots = [t for t in time_slots if t not in booked_times]
             
+        # Filter past slots if date is today
+        date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+        today = datetime.now().date()
+        
+        if date_obj == today:
+            import pytz
+            from .config import config
+            tz = pytz.timezone(config.TIMEZONE)
+            current_time = datetime.now(tz).strftime("%H:%M")
+            time_slots = [t for t in time_slots if t > current_time]
+            
         return time_slots
 
     def _format_doctor(self, doctor_db: Doctor) -> Dict[str, Any]:

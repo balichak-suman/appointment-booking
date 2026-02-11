@@ -11,11 +11,15 @@ load_dotenv()
 # DATABASE CONFIGURATION
 # ============================================
 # Construct the SQLAlchemy URL
+# Construct the SQLAlchemy URL
 # Format: postgresql://user:password@host:port/name
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:12345@localhost:5432/hospital")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./hospital.db")
 
 # Log DB connection (masked)
-print(f"Database URL: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else 'Found'}")
+if "sqlite" in DATABASE_URL:
+    print(f"[DB] Using SQLite Database (Local Testing)")
+else:
+    print(f"[DB] Using PostgreSQL Database")
 
 # ============================================
 # API SETTINGS

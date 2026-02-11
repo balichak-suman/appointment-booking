@@ -14,8 +14,13 @@ load_dotenv()
 from medical_backend.settings import DATABASE_URL
 
 # Create engine
-engine = create_engine(DATABASE_URL)
-print(f"🗄️  Using PostgreSQL database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else DATABASE_URL}")
+# Create engine
+connect_args = {}
+if "sqlite" in DATABASE_URL:
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
+print(f"[DB] Database connected: {DATABASE_URL.split('://')[0]}")
 
 # Create session
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

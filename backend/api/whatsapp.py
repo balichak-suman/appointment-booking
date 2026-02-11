@@ -11,19 +11,24 @@ from datetime import datetime
 import os
 import traceback
 import json
-from .whatsapp_bot.config import config
+from whatsapp_bot.config import config
 
 # Import local bot services
-from .whatsapp_bot.whatsapp_client import whatsapp_client
-from .whatsapp_bot.ai_service import ai_service
-from .whatsapp_bot.doctor_service import doctor_service
-from .whatsapp_bot.appointment_manager import appointment_manager
-from .whatsapp_bot.google_calendar_service import google_calendar_service
-from .whatsapp_bot.cancel_functions import show_user_appointments, cancel_appointment
+from whatsapp_bot.whatsapp_client import whatsapp_client
+# from whatsapp_bot.ai_service import ai_service # AI Removed
+from whatsapp_bot.doctor_service import doctor_service
+from whatsapp_bot.appointment_manager import appointment_manager
+from whatsapp_bot.google_calendar_service import google_calendar_service
+from whatsapp_bot.cancel_functions import show_user_appointments, cancel_appointment
 
 router = APIRouter(tags=["WhatsApp"])
 
 # ==================== WEBHOOK ENDPOINTS ====================
+
+@router.head("/webhook")
+async def verify_webhook_head():
+    """Handle HEAD requests for UptimeRobot/Meta"""
+    return {"status": "ok"}
 
 @router.get("/webhook")
 async def verify_webhook(request: Request):
@@ -118,24 +123,31 @@ async def handle_incoming_message(user_id: str, user_name: str, message_body: st
         await process_interaction(user_id, user_name, interaction_id, session)
         return
 
-    # 2. Handle simple text intent using AI
+    # 2. Handle simple text intent (Rule-based, no AI)
     if message_body:
-        result = ai_service.parse_intent(message_body)
-        intent = result.get("intent")
+        text = message_body.lower().strip()
         
-        if intent == "book_appointment":
+        # Simple Keyword Matching
+        if text in ['book', 'appointment', 'schedule', 'booking', 'new']:
             send_specialization_list(user_id)
             appointment_manager.update_session(user_id, {"step": "awaiting_specialization", "tempData": {"userName": user_name}})
-        elif intent == "cancel_appointment":
+        
+        elif text in ['cancel', 'cancellation', 'delete', 'remove']:
             show_user_appointments(user_id)
+            
+        elif text in ['reschedule', 'change', 'move', 'update']:
+            appointment_manager.update_session(user_id, {"step": "rescheduling"})
+            show_user_appointments(user_id)
+            
         else:
-            # Default: Show Main Menu for unrecognized text
+            # Default: Show Main Menu for any other text
             send_main_menu(user_id, user_name)
 
 def send_main_menu(user_id: str, user_name: str):
     """Send the main menu buttons"""
     buttons = [
         {"id": "book_appointment", "title": "Book Appointment"},
+        {"id": "reschedule_appointment", "title": "Reschedule"},
         {"id": "cancel_appointment", "title": "Cancel Appointment"}
     ]
     whatsapp_client.send_interactive_buttons(
@@ -156,6 +168,14 @@ async def process_interaction(user_id: str, user_name: str, interaction_id: str,
     
     if interaction_id == "cancel_appointment":
         show_user_appointments(user_id)
+        return
+
+    if interaction_id == "reschedule_appointment":
+        # For now, rescheduling is just cancelling + booking. 
+        # So we show appointments to cancel first.
+        # Ideally, we should set a flag in session to know it's a reschedule flow.
+        appointment_manager.update_session(user_id, {"step": "rescheduling"})
+        show_user_appointments(user_id) 
         return
     
     # Specialization selection
@@ -198,6 +218,43 @@ async def process_interaction(user_id: str, user_name: str, interaction_id: str,
         time = interaction_id.replace("time_", "")
         temp_data = session.get("tempData", {})
         
+        # Validate Booking Constraints
+        is_valid, error_msg, error_code = appointment_manager.validate_booking_constraints(
+            user_id, 
+            temp_data.get("doctor_id"), 
+            temp_data.get("date"), 
+            time
+        )
+        
+        if not is_valid:
+            if error_code == "SAME_DOCTOR_DAY":
+                buttons = [
+                    {"id": "reschedule_appointment", "title": "Reschedule Existing"},
+                    {"id": f"date_{temp_data.get('date')}", "title": "Choose Different Date"} # Actually need to go back to date selection properly
+                ]
+                # Better to just offer Reschedule or Cancel
+                buttons = [
+                    {"id": "reschedule_appointment", "title": "Reschedule Old"},
+                    {"id": "cancel_appointment", "title": "Cancel Old"}
+                ]
+                whatsapp_client.send_interactive_buttons(user_id, f"⚠️ {error_msg}", buttons)
+                
+            elif error_code == "TIME_CLASH":
+                # Go back to time selection for this doctor/date
+                # We can re-trigger time slots logic or just give a button to do so
+                # But button IDs in WhatsApp are for interactions. 
+                # Let's just send a message and then re-send the time slots?
+                # Or better, a button "Choose Different Time" that triggers... logic?
+                # Actually, simpler: Just send message and re-send time slots.
+                whatsapp_client.send_message(user_id, f"⚠️ {error_msg}")
+                send_time_slots(user_id, temp_data.get("doctor_id"), temp_data.get("date"))
+                
+            else:
+                 whatsapp_client.send_message(user_id, f"⚠️ {error_msg}")
+                 send_main_menu(user_id, user_name)
+                 
+            return
+
         # Create appointment in DB
         try:
             appointment = appointment_manager.create_appointment(
@@ -246,6 +303,13 @@ async def process_interaction(user_id: str, user_name: str, interaction_id: str,
         if len(parts) >= 2:
             apt_id = parts[1]
             cancel_appointment(user_id, apt_id)
+            
+            # Check if we are in rescheduling mode
+            current_step = session.get("step")
+            if current_step == "rescheduling":
+                whatsapp_client.send_message(user_id, "🗓️ Now, let's book your new appointment time.")
+                send_specialization_list(user_id)
+                appointment_manager.update_session(user_id, {"step": "awaiting_specialization", "tempData": {"userName": user_name}})
         return
 
 # ==================== UI HELPERS ====================
@@ -294,7 +358,7 @@ def send_date_list(user_id: str, doctor_id: str):
 
 def send_time_slots(user_id: str, doctor_id: str, date: str):
     # Get booked slots
-    booked = appointment_manager.get_doctor_appointments(doctor_id, date)
+    booked = appointment_manager.get_slots_for_doctor(doctor_id, date)
     
     # Get available
     slots = doctor_service.get_available_slots(doctor_id, date, booked)
@@ -308,7 +372,11 @@ def send_time_slots(user_id: str, doctor_id: str, date: str):
         ]
         
     if not slots:
-        whatsapp_client.send_message(user_id, "No available slots on this date.")
+        # UX Improvement: Offer to choose a different date
+        buttons = [
+            {"id": f"dr_{doctor_id}", "title": "Choose Different Date"} # Re-triggers date selection for this doctor
+        ]
+        whatsapp_client.send_interactive_buttons(user_id, f"⚠️ No available slots on {date}.", buttons)
         return
     
     # Format for WhatsApp (Max 10 per list message)

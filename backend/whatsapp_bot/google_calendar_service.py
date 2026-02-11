@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import os
 from typing import List, Dict, Optional
 import pytz
+from .config import config
 
 # Path to your service account credentials JSON file
 CREDENTIALS_FILE = 'credentials.json'
@@ -11,7 +12,7 @@ CREDENTIALS_FILE = 'credentials.json'
 class GoogleCalendarService:
     def __init__(self):
         self.service = None
-        self.timezone = pytz.timezone('Asia/Kolkata')  # Change to your timezone
+        self.timezone = pytz.timezone(config.TIMEZONE)
         self.initialize_service()
     
     def initialize_service(self):

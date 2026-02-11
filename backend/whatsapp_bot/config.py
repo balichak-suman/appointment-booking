@@ -15,4 +15,7 @@ class Config:
     # Groq Configuration
     GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
 
+    # App Configuration
+    TIMEZONE = os.getenv('TIMEZONE', 'Asia/Kolkata')
+
 config = Config()

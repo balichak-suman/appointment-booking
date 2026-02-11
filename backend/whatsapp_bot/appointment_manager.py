@@ -68,8 +68,8 @@ class AppointmentManager:
         finally:
             db.close()
     
-    def get_doctor_appointments(self, doctor_id: str, date: str) -> List[Dict[str, Any]]:
-        """Get all appointments for a doctor on a specific date"""
+    def get_slots_for_doctor(self, doctor_id: str, date: str) -> List[Dict[str, Any]]:
+        """Get all appointments for a doctor on a specific date (Renamed)"""
         db: Session = SessionLocal()
         try:
             # Helper to check if doctor_id matches (handling int/str mismatch if necessary)
@@ -108,6 +108,44 @@ class AppointmentManager:
                    })
             
             return doctor_appointments
+        finally:
+            db.close()
+
+    def validate_booking_constraints(self, user_id: str, doctor_id: str, date: str, time: str) -> tuple[bool, str, str]:
+        """
+        Validate booking constraints:
+        1. No multiple bookings with same doctor on same day
+        2. No multiple bookings at same time (any doctor)
+        Returns: (is_valid, error_message, error_code)
+        """
+        db: Session = SessionLocal()
+        try:
+            query_date = datetime.strptime(date, "%Y-%m-%d").date()
+            
+            # Get all active appointments for this user on this date
+            user_appointments = db.query(Appointment).filter(
+                Appointment.patient_phone == user_id,
+                Appointment.date == query_date,
+                Appointment.status != "Cancelled"
+            ).all()
+            
+            for apt in user_appointments:
+                # Check Constraint 1: Same Doctor, Same Day
+                # Handle doctor_id comparison (DB is int, input might be str/int)
+                try:
+                    appt_doc_id = str(apt.doctor_id)
+                    input_doc_id = str(doctor_id)
+                    if appt_doc_id == input_doc_id:
+                        return False, f"You already have an appointment with {apt.doctor_name} on {date}. Please reschedule or cancel it first.", "SAME_DOCTOR_DAY"
+                except:
+                    pass # Continue if ID comparison fails (shouldn't happen)
+
+                # Check Constraint 2: Same Time, Any Doctor
+                if apt.time == time:
+                     return False, f"You already have an appointment at {time} on {date} with {apt.doctor_name}.", "TIME_CLASH"
+            
+            return True, "", ""
+            
         finally:
             db.close()
 
