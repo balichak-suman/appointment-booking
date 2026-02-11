@@ -37,9 +37,13 @@ def test_route():
 def index():
     return send_from_directory('static', 'index.html')
 
-@app.route('/webhook', methods=['GET', 'POST'], strict_slashes=False)
+@app.route('/webhook', methods=['GET', 'POST', 'HEAD'], strict_slashes=False)
 def webhook():
     """Webhook endpoint for receiving messages and verification"""
+
+    # Handle UptimeRobot / Health Checks (HEAD)
+    if request.method == 'HEAD':
+        return '', 200
     
     # Handle Webhook Verification (GET)
     if request.method == 'GET':
