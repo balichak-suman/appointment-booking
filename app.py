@@ -49,10 +49,13 @@ def webhook():
         
         if mode and token:
             if mode == 'subscribe' and token == config.WHATSAPP_VERIFY_TOKEN:
-                print("Webhook verified successfully!")
+                logger.info("Webhook verified successfully!")
                 return challenge, 200
             else:
                 return jsonify({"status": "error", "message": "Verification failed"}), 403
+        else:
+            # Return success for GET requests without verification params (browser/monitoring)
+            return jsonify({"status": "ok", "message": "Webhook endpoint is active"}), 200
     
     # Handle Incoming Messages (POST)
     try:
