@@ -333,7 +333,10 @@ def send_date_list(user_id: str, doctor_id: str):
         return
 
     working_days = doctor['working_days'] # List of strings e.g. ["Monday", "Tuesday"]
-    today = datetime.now()
+    import pytz
+    from whatsapp_bot.config import config
+    tz = pytz.timezone(config.TIMEZONE)
+    today = datetime.now(tz)
     dates = []
     days_checked = 0
     from datetime import timedelta
