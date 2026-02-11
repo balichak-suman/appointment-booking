@@ -1,0 +1,64 @@
+{
+  "doctors": [
+    {
+      "id": "dr_001",
+      "name": "Dr. Sarah Johnson",
+      "specialization": "General Physician",
+      "google_calendar_id": "a021a7e56b3eeacfed8461bcbd6a7427e6fa481c847bc9eabd97c618b6b443fa@group.calendar.google.com",
+      "working_days": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "working_hours": {
+        "start": "09:00",
+        "end": "17:00"
+      },
+      "slot_duration_minutes": 30
+    },
+    {
+      "id": "dr_002",
+      "name": "Dr. Michael Chen",
+      "specialization": "Cardiologist",
+      "google_calendar_id": "44b62405544f6bca6ce0e2b72478ff5f325e4c11cbabfc82fac0ebaabf6be6f5@group.calendar.google.com",
+      "working_days": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "working_hours": {
+        "start": "10:00",
+        "end": "18:00"
+      },
+      "slot_duration_minutes": 30
+    },
+    {
+      "id": "dr_003",
+      "name": "Dr. Priya Sharma",
+      "specialization": "Dermatologist",
+      "google_calendar_id": "16a5da187ed0e61da4199afad3b26805b7db0e306c2beb1278cf5978bfa42bb9@group.calendar.google.com",
+      "working_days": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "working_hours": {
+        "start": "09:00",
+        "end": "16:00"
+      },
+      "slot_duration_minutes": 30
+    }
+  ]
+}

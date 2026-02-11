@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pandas
+python-multipart
+psycopg2-binary
+sqlalchemy
+python-dotenv
+requests
+groq
+python-dateutil
+google-api-python-client
+google-auth
+google-auth-httplib2
+google-auth-oauthlib
+pytz
