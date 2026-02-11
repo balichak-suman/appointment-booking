@@ -24,17 +24,13 @@ services:
       - key: GROQ_API_KEY
         sync: false
 
-  # React Frontend (Static Site - Free Tier Valid)
-  - type: static
+  # React Frontend (Served as Web Service to avoid Blueprint issues)
+  - type: web
     name: hospital-frontend
-    env: static
+    env: node
     rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /**
-        destination: /index.html
+    startCommand: npx serve -s dist -l $PORT
     envVars:
       - key: VITE_API_URL
         fromService:
