@@ -11,12 +11,27 @@ def get_appointments(
     skip: int = 0,
     limit: int = 100,
     status: Optional[str] = None,
+    date: Optional[str] = None,
+    doctorId: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    print(">>> GET APPOINTMENTS CALLED")
+    print(f">>> GET APPOINTMENTS CALLED params: status={status}, date={date}, doctorId={doctorId}")
     query = db.query(Appointment)
-    if status:
+    
+    if status and status != "All Statuses":
         query = query.filter(Appointment.status == status)
+    
+    if date:
+        from datetime import datetime
+        try:
+            # Frontend sends YYYY-MM-DD
+            filter_date = datetime.strptime(date, "%Y-%m-%d").date()
+            query = query.filter(Appointment.date == filter_date)
+        except ValueError:
+            pass # Ignore invalid date format
+
+    if doctorId:
+        query = query.filter(Appointment.doctor_id == int(doctorId))
     
     total = query.count()
     appointments_db = query.offset(skip).limit(limit).all()
