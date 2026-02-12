@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import get_db, Appointment
+from database import get_db, Appointment, Doctor
 from typing import List, Optional
 from pydantic import BaseModel
 
@@ -81,14 +81,48 @@ def update_appointment_status(
     db.commit()
     return {"success": True, "message": "Status updated"}
 
+from database import get_db, Appointment, Doctor
+
+# ... existing code ...
+
+class AppointmentCreate(BaseModel):
+    patient_name: str
+    patient_phone: str
+    doctor_id: int
+    date: str
+    time: str
+    reason: Optional[str] = None
+    status: str = "Booked"
+
 @router.post("/")
-def create_appointment(appointment_data: dict, db: Session = Depends(get_db)):
+def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get_db)):
     try:
-        new_appointment = Appointment(**appointment_data)
+        # Fetch doctor details automatically
+        doctor = db.query(Doctor).filter(Doctor.id == appointment.doctor_id).first()
+        if not doctor:
+            raise HTTPException(status_code=404, detail="Doctor not found")
+
+        from datetime import datetime
+        
+        new_appointment = Appointment(
+            patient_name=appointment.patient_name,
+            patient_phone=appointment.patient_phone,
+            doctor_id=appointment.doctor_id,
+            doctor_name=doctor.name,
+            department=doctor.specialization,
+            date=datetime.strptime(appointment.date, "%Y-%m-%d").date(),
+            time=appointment.time,
+            reason=appointment.reason,
+            status=appointment.status,
+            type="Scheduled",
+            booking_source="Dashboard"
+        )
+        
         db.add(new_appointment)
         db.commit()
         db.refresh(new_appointment)
-        return {"success": True, "data": new_appointment}
+        return {"success": True, "data": new_appointment, "message": "Appointment created successfully"}
     except Exception as e:
         db.rollback()
+        print(f"Error creating appointment: {e}")
         raise HTTPException(status_code=400, detail=str(e))

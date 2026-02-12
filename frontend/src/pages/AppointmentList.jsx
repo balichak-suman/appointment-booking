@@ -16,12 +16,12 @@ import {
     MenuItem,
     Grid,
     Button,
-    Menu,
-    MenuItem as MenuOption,
-    CircularProgress,
-    Alert
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from '@mui/material';
-import { MoreVert, WhatsApp, Phone, Person } from '@mui/icons-material';
+import { MoreVert, WhatsApp, Phone, Person, Add } from '@mui/icons-material';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -38,6 +38,17 @@ const AppointmentList = () => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const { isStaff } = useAuth();
+
+    // Manual Appointment State
+    const [openDialog, setOpenDialog] = useState(false);
+    const [newAppointment, setNewAppointment] = useState({
+        patient_name: '',
+        patient_phone: '',
+        doctor_id: '',
+        date: new Date().toISOString().split('T')[0],
+        time: '09:00',
+        reason: ''
+    });
 
     const fetchData = async () => {
         try {
@@ -116,6 +127,30 @@ const AppointmentList = () => {
         return transitions[currentStatus] || [];
     };
 
+    const handleCreateOpen = () => setOpenDialog(true);
+    const handleCreateClose = () => setOpenDialog(false);
+
+    const handleCreateSubmit = async () => {
+        try {
+            await api.post('/appointments', newAppointment);
+            setOpenDialog(false);
+            fetchData(); // Refresh list
+            alert('Appointment created successfully!');
+            // Reset form
+            setNewAppointment({
+                patient_name: '',
+                patient_phone: '',
+                doctor_id: '',
+                date: new Date().toISOString().split('T')[0],
+                time: '09:00',
+                reason: ''
+            });
+        } catch (err) {
+            console.error('Failed to create appointment:', err);
+            alert(err.response?.data?.detail || 'Failed to create appointment');
+        }
+    };
+
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -130,6 +165,14 @@ const AppointmentList = () => {
                 <Typography variant="h5" fontWeight="700">
                     Appointments
                 </Typography>
+                <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={handleCreateOpen}
+                    sx={{ borderRadius: 2 }}
+                >
+                    New Appointment
+                </Button>
             </Box>
 
             {/* Filters */}
@@ -291,6 +334,79 @@ const AppointmentList = () => {
                     <MenuOption disabled>No actions available</MenuOption>
                 )}
             </Menu>
+            {/* Manual Appointment Dialog */}
+            <Dialog open={openDialog} onClose={handleCreateClose} maxWidth="sm" fullWidth>
+                <DialogTitle>New Appointment</DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Patient Name"
+                                value={newAppointment.patient_name}
+                                onChange={(e) => setNewAppointment({ ...newAppointment, patient_name: e.target.value })}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Phone Number"
+                                value={newAppointment.patient_phone}
+                                onChange={(e) => setNewAppointment({ ...newAppointment, patient_phone: e.target.value })}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                select
+                                label="Doctor"
+                                value={newAppointment.doctor_id}
+                                onChange={(e) => setNewAppointment({ ...newAppointment, doctor_id: e.target.value })}
+                            >
+                                {doctors.map((doctor) => (
+                                    <MenuItem key={doctor.id} value={doctor.id}>
+                                        {doctor.name} - {doctor.specialization}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Date"
+                                type="date"
+                                value={newAppointment.date}
+                                onChange={(e) => setNewAppointment({ ...newAppointment, date: e.target.value })}
+                                InputLabelProps={{ shrink: true }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Time"
+                                type="time"
+                                value={newAppointment.time}
+                                onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
+                                InputLabelProps={{ shrink: true }}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Reason (Optional)"
+                                value={newAppointment.reason}
+                                onChange={(e) => setNewAppointment({ ...newAppointment, reason: e.target.value })}
+                            />
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCreateClose}>Cancel</Button>
+                    <Button onClick={handleCreateSubmit} variant="contained" disabled={!newAppointment.patient_name || !newAppointment.doctor_id}>
+                        Book Appointment
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };
