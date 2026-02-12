@@ -46,44 +46,46 @@ def seed_doctors():
         
         count = db.query(Doctor).count()
         if count > 0:
-            print(f"Database already has {count} doctors. Skipping seed.")
-            return
+            print(f"Database has {count} doctors. Clearing old data...")
+            db.query(Doctor).delete()
+            db.commit()
+            print("Old data cleared.")
 
         print("Seeding doctors...")
         
         doctors = [
             Doctor(
-                name="Dr. Sarah Smith",
-                specialization="Cardiologist",
-                email="sarah@hospital.com",
+                name="Dr. Sarah Johnson",
+                specialization="General Physician",
+                email="sarah.johnson@hospital.com",
                 working_hours_start="09:00",
                 working_hours_end="17:00",
-                working_days="Monday,Wednesday,Friday",
+                working_days="Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday",
                 slot_duration_minutes=30,
                 status="Available",
-                google_calendar_id="primary" 
+                google_calendar_id="a021a7e56b3eeacfed8461bcbd6a7427e6fa481c847bc9eabd97c618b6b443fa@group.calendar.google.com" 
             ),
             Doctor(
-                name="Dr. John Doe",
-                specialization="Dermatologist",
-                email="john@hospital.com",
+                name="Dr. Michael Chen",
+                specialization="Cardiologist",
+                email="michael.chen@hospital.com",
                 working_hours_start="10:00",
-                working_hours_end="16:00",
-                working_days="Tuesday,Thursday",
-                slot_duration_minutes=45,
+                working_hours_end="18:00",
+                working_days="Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday",
+                slot_duration_minutes=30,
                 status="Available",
-                google_calendar_id="primary"
+                google_calendar_id="44b62405544f6bca6ce0e2b72478ff5f325e4c11cbabfc82fac0ebaabf6be6f5@group.calendar.google.com"
             ),
             Doctor(
-                name="Dr. Emily White",
-                specialization="General Physician",
-                email="emily@hospital.com",
-                working_hours_start="08:00",
-                working_hours_end="14:00",
-                working_days="Monday,Tuesday,Wednesday,Thursday,Friday",
-                slot_duration_minutes=15,
+                name="Dr. Priya Sharma",
+                specialization="Dermatologist",
+                email="priya.sharma@hospital.com",
+                working_hours_start="09:00",
+                working_hours_end="16:00",
+                working_days="Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday",
+                slot_duration_minutes=30,
                 status="Available",
-                google_calendar_id="primary"
+                google_calendar_id="16a5da187ed0e61da4199afad3b26805b7db0e306c2beb1278cf5978bfa42bb9@group.calendar.google.com"
             )
         ]
         

@@ -2,6 +2,11 @@
 
 A complete Hospital Management System featuring a **Modern React Dashboard** and an **Advanced WhatsApp Bot** for automated appointments.
 
+## 🚀 Live Demo
+- **Frontend (Dashboard):** [Link to Render Static Site](https://your-frontend-url.onrender.com)
+- **Backend (API):** [Link to Render Web Service](https://your-backend-url.onrender.com)
+- **API Documentation:** [Swagger UI](https://your-backend-url.onrender.com/docs)
+
 ## 🌟 Key Features
 
 ### 🤖 WhatsApp Bot (Integrated)
