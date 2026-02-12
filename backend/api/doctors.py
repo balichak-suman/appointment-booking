@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from database import get_db, Doctor
 from typing import List, Optional
+from pydantic import BaseModel
 
 router = APIRouter(tags=["Doctors"])
 
@@ -24,14 +25,43 @@ def get_doctors(
         "data": doctors
     }
 
+class DoctorCreate(BaseModel):
+    name: str
+    specialization: str
+    email: str
+    phone: Optional[str] = None
+    experience: int = 0
+    working_hours_start: str = "09:00"
+    working_hours_end: str = "17:00"
+    working_days: str = "Monday,Tuesday,Wednesday,Thursday,Friday"
+
 @router.post("/")
-def create_doctor(doctor_data: dict, db: Session = Depends(get_db)):
+def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
     try:
-        new_doctor = Doctor(**doctor_data)
+        # Check if email already exists
+        existing_doctor = db.query(Doctor).filter(Doctor.email == doctor.email).first()
+        if existing_doctor:
+            raise HTTPException(status_code=400, detail="Doctor with this email already exists")
+
+        new_doctor = Doctor(
+            name=doctor.name,
+            specialization=doctor.specialization,
+            email=doctor.email,
+            phone=doctor.phone,
+            experience=doctor.experience,
+            working_hours_start=doctor.working_hours_start,
+            working_hours_end=doctor.working_hours_end,
+            working_days=doctor.working_days,
+            status="Available"
+        )
+        
         db.add(new_doctor)
         db.commit()
         db.refresh(new_doctor)
-        return new_doctor
+        return {"success": True, "data": new_doctor, "message": "Doctor created successfully"}
+    except HTTPException as he:
+        raise he
     except Exception as e:
         db.rollback()
+        print(f"Error creating doctor: {e}")
         raise HTTPException(status_code=400, detail=str(e))
