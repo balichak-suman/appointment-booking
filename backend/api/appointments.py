@@ -125,11 +125,8 @@ def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get
         # Sync to Google Calendar
         try:
             from whatsapp_bot.google_calendar_service import google_calendar_service
-            # Use 'primary' as default if no specific calendar ID is configured
-            calendar_id = 'primary'
-            
-            # If we had a doctor->calendar mapping, we would use it here. 
-            # For now, we use the primary calendar of the service account/authenticated user.
+            # Use doctor's specific calendar ID if available, otherwise fallback to 'primary'
+            calendar_id = doctor.google_calendar_id if doctor.google_calendar_id else 'primary'
             
             google_calendar_service.create_appointment(
                 calendar_id=calendar_id,
