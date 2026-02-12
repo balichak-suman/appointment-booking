@@ -26,18 +26,20 @@ def get_appointments(
     for apt in appointments_db:
         formatted_appointments.append({
             "id": apt.id,
-            "patientName": apt.patient_name,
-            "doctorName": apt.doctor_name,
-            "date": str(apt.date),
-            "time": apt.time,
+            "patient": {
+                "name": apt.patient_name,
+                "mobile": apt.patient_phone or "N/A"
+            },
+            "doctor": {
+                "name": apt.doctor_name,
+                "department": apt.department
+            },
+            "appointmentDate": str(apt.date),
+            "slotStartTime": apt.time,
             "type": apt.type,
             "status": apt.status,
-            "reason": apt.reason,
-            "department": apt.department,
-            "patientId": apt.patient_id,
-            "doctorId": apt.doctor_id,
-            "patientPhone": apt.patient_phone,
-            "bookingSource": apt.booking_source
+            "reasonForVisit": apt.reason,
+            "source": apt.booking_source or "Dashboard"
         })
     
     return {
