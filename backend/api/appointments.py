@@ -121,6 +121,29 @@ def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get
         db.add(new_appointment)
         db.commit()
         db.refresh(new_appointment)
+
+        # Sync to Google Calendar
+        try:
+            from whatsapp_bot.google_calendar_service import google_calendar_service
+            # Use 'primary' as default if no specific calendar ID is configured
+            calendar_id = 'primary'
+            
+            # If we had a doctor->calendar mapping, we would use it here. 
+            # For now, we use the primary calendar of the service account/authenticated user.
+            
+            google_calendar_service.create_appointment(
+                calendar_id=calendar_id,
+                patient_name=new_appointment.patient_name,
+                patient_phone=new_appointment.patient_phone,
+                doctor_name=new_appointment.doctor_name,
+                date=str(new_appointment.date),
+                time=new_appointment.time
+            )
+            print(f"Appointment synced to Google Calendar ({calendar_id})")
+        except Exception as e:
+            print(f"Failed to sync to Google Calendar: {e}")
+            # We do NOT rollback the DB transaction here because the appointment IS created in our system.
+            # In a production system, we might want a background job to retry sync.
         return {"success": True, "data": new_appointment, "message": "Appointment created successfully"}
     except Exception as e:
         db.rollback()
