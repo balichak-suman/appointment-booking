@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db, Appointment
 from typing import List, Optional
+from pydantic import BaseModel
 
 router = APIRouter(tags=["Appointments"])
 
@@ -47,7 +48,7 @@ def get_appointments(
 class StatusUpdate(BaseModel):
     status: str
 
-from pydantic import BaseModel
+
 
 @router.put("/{appointment_id}/status")
 def update_appointment_status(
