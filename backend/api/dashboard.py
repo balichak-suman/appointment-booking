@@ -32,6 +32,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
             doc_waiting = db.query(Appointment).filter(Appointment.doctor_id == doc.id, Appointment.status.in_(["Booked", "Checked In"])).count()
             
             doctor_summary.append({
+                "doctorId": doc.id,
                 "doctor": {
                     "name": doc.name,
                     "department": doc.specialization
