@@ -43,7 +43,7 @@ class AppointmentManager:
                 date=datetime.strptime(date, "%Y-%m-%d").date(),
                 time=time,
                 type="Scheduled",
-                status="Confirmed",
+                status="Booked",
                 patient_phone=user_id,
                 doctor_id=int(doctor_id) if doctor_id.isdigit() else None,
                 booking_source="WhatsApp",
