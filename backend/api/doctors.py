@@ -18,11 +18,29 @@ def get_doctors(
         query = query.filter(Doctor.specialization == specialization)
     
     total = query.count()
-    doctors = query.offset(skip).limit(limit).all()
+    doctors_db = query.offset(skip).limit(limit).all()
     
+    formatted_doctors = []
+    for d in doctors_db:
+        formatted_doctors.append({
+            "id": d.id,
+            "name": d.name,
+            "specialization": d.specialization,
+            "experience": d.experience,
+            "patients": d.patients,
+            "appointments": d.appointments,
+            "rating": d.rating,
+            "status": d.status,
+            "email": d.email,
+            "phone": d.phone,
+            "working_hours_start": d.working_hours_start,
+            "working_hours_end": d.working_hours_end,
+            "working_days": d.working_days
+        })
+
     return {
         "success": True,
-        "data": doctors
+        "data": formatted_doctors
     }
 
 class DoctorCreate(BaseModel):

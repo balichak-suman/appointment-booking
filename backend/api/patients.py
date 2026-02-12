@@ -33,8 +33,8 @@ def get_patients(
         })
     
     return {
-        "total": total,
-        "patients": formatted_patients
+        "success": True,
+        "data": formatted_patients
     }
 
 @router.post("/")
