@@ -20,8 +20,8 @@ def get_doctors(
     doctors = query.offset(skip).limit(limit).all()
     
     return {
-        "total": total,
-        "doctors": doctors
+        "success": True,
+        "data": doctors
     }
 
 @router.post("/")

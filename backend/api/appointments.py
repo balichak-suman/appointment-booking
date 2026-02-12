@@ -40,10 +40,28 @@ def get_appointments(
         })
     
     return {
-        "version": "v2_camelCase",
-        "total": total,
-        "appointments": formatted_appointments
+        "success": True,
+        "data": formatted_appointments
     }
+
+class StatusUpdate(BaseModel):
+    status: str
+
+from pydantic import BaseModel
+
+@router.put("/{appointment_id}/status")
+def update_appointment_status(
+    appointment_id: int, 
+    status_update: StatusUpdate,
+    db: Session = Depends(get_db)
+):
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    appointment.status = status_update.status
+    db.commit()
+    return {"success": True, "message": "Status updated"}
 
 @router.post("/")
 def create_appointment(appointment_data: dict, db: Session = Depends(get_db)):
@@ -52,7 +70,7 @@ def create_appointment(appointment_data: dict, db: Session = Depends(get_db)):
         db.add(new_appointment)
         db.commit()
         db.refresh(new_appointment)
-        return new_appointment
+        return {"success": True, "data": new_appointment}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))

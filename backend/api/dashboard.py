@@ -4,7 +4,7 @@ from database import get_db, Doctor, Patient, Appointment
 
 router = APIRouter(tags=["Dashboard"])
 
-@router.get("")
+@router.get("/summary")
 def get_dashboard_stats(db: Session = Depends(get_db)):
     """Generate dashboard data from database counts"""
     try:
@@ -15,52 +15,48 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         
         # Calculate statistics from actual data
         available_doctors = db.query(Doctor).filter(Doctor.status == "Available").count()
-        completed_appointments = db.query(Appointment).filter(Appointment.status == "Completed").count()
-        cancelled_appointments = db.query(Appointment).filter(Appointment.status == "Cancelled").count()
-        rescheduled_appointments = db.query(Appointment).filter(Appointment.status == "Rescheduled").count()
+        completed = db.query(Appointment).filter(Appointment.status == "Completed").count()
+        cancelled = db.query(Appointment).filter(Appointment.status == "Cancelled").count()
+        rescheduled = db.query(Appointment).filter(Appointment.status == "Rescheduled").count()
+        booked = db.query(Appointment).filter(Appointment.status == "Booked").count()
+        checked_in = db.query(Appointment).filter(Appointment.status == "Checked In").count()
+        in_consultation = db.query(Appointment).filter(Appointment.status == "In Consultation").count()
+        no_show = db.query(Appointment).filter(Appointment.status == "No Show").count()
         
-        # Monthly data (empty if no data)
-        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"]
-        monthly_data = []
-        for month in months:
-            monthly_data.append({
-                "month": month,
-                "completed": 0,
-                "ongoing": 0,
-                "rescheduled": 0
+        # Doctor Summary (Group by doctor)
+        doctors = db.query(Doctor).all()
+        doctor_summary = []
+        for doc in doctors:
+            doc_appts = db.query(Appointment).filter(Appointment.doctor_id == doc.id).count()
+            doc_completed = db.query(Appointment).filter(Appointment.doctor_id == doc.id, Appointment.status == "Completed").count()
+            doc_waiting = db.query(Appointment).filter(Appointment.doctor_id == doc.id, Appointment.status.in_(["Booked", "Checked In"])).count()
+            
+            doctor_summary.append({
+                "doctor": {
+                    "name": doc.name,
+                    "department": doc.specialization
+                },
+                "totalAppointments": doc_appts,
+                "completed": doc_completed,
+                "waiting": doc_waiting
             })
-        
+
         return {
-            "summary": {
-                "doctors": {
-                    "count": total_doctors,
-                    "change": "0%",
-                    "period": "in last 7 Days"
+            "success": True,
+            "data": {
+                "summary": {
+                    "total": total_appointments,
+                    "completed": completed,
+                    "cancelled": cancelled,
+                    "booked": booked,
+                    "checkedIn": checked_in,
+                    "inConsultation": in_consultation,
+                    "noShow": no_show,
+                    "doctors": total_doctors,
+                    "patients": total_patients
                 },
-                "patients": {
-                    "count": total_patients,
-                    "change": "0%",
-                    "period": "in last 7 Days"
-                },
-                "appointments": {
-                    "count": total_appointments,
-                    "change": "0%",
-                    "period": "in last 7 Days"
-                },
-                "revenue": {
-                    "amount": "$0",
-                    "change": "0%",
-                    "period": "in last 7 Days"
-                }
-            },
-            "appointmentStats": {
-                "total": total_appointments,
-                "cancelled": cancelled_appointments,
-                "rescheduled": rescheduled_appointments,
-                "completed": completed_appointments,
-                "walkIn": 0
-            },
-            "monthlyData": monthly_data
+                "doctorSummary": doctor_summary
+            }
         }
     except Exception as e:
         print(f"Error generating dashboard data: {e}")

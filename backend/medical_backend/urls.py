@@ -8,8 +8,13 @@ from api.appointments import router as appointments_router
 # Main API Router
 api_router = APIRouter()
 
+from api.auth import router as auth_router
+from api.queue import router as queue_router
+
 # We use prefix="" in the sub-routers and define the full path in urls.py 
 # to match the frontend's exact URL calls (no trailing slash issues)
+api_router.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
+api_router.include_router(queue_router, prefix="/api/queue", tags=["Queue"])
 api_router.include_router(dashboard_router, prefix="/api/dashboard", tags=["Dashboard"])
 api_router.include_router(doctors_router, prefix="/api/doctors", tags=["Doctors"])
 api_router.include_router(patients_router, prefix="/api/patients", tags=["Patients"])

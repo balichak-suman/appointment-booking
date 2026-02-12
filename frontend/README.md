@@ -1,16 +1,100 @@
-# React + Vite
+# Clinic Staff Dashboard - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React-based web dashboard for clinic staff and doctors to manage appointments.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js (v18 or higher)
+- Backend API running on `http://localhost:5000`
 
-## React Compiler
+## Setup Instructions
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Install Dependencies
 
-## Expanding the ESLint configuration
+```bash
+npm install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2. Start Development Server
+
+```bash
+npm run dev
+```
+
+The application will run on `http://localhost:5173`
+
+### 3. Build for Production
+
+```bash
+npm run build
+```
+
+The build files will be in the `dist/` directory.
+
+## Features
+
+### Dashboard
+- Real-time appointment summary (total, completed, pending, etc.)
+- Doctor-wise breakdown (staff/admin only)
+- Live queue display with auto-refresh every 15 seconds
+- WhatsApp appointment indicators
+
+### Appointments
+- Filter by date, doctor, and status
+- View all appointment details
+- Update appointment status with workflow validation
+- WhatsApp/Manual source indicators
+- Quick actions menu
+
+### Role-Based Access
+- **Admin**: Full access to all features
+- **Staff**: View all appointments, manage appointments
+- **Doctor**: View only their own appointments, update status
+
+## Login Credentials (Demo)
+
+- **Admin**: `admin` / `admin123`
+- **Staff**: `staff` / `staff123`
+- **Doctor**: `dr.sarah` / `doctor123`
+
+## Project Structure
+
+```
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── Layout/
+│   │   │   └── MainLayout.jsx    # Sidebar + Header layout
+│   │   └── ProtectedRoute.jsx    # Auth guard
+│   ├── context/
+│   │   └── AuthContext.jsx       # Authentication state
+│   ├── pages/
+│   │   ├── Login.jsx             # Login page
+│   │   ├── Dashboard.jsx         # Main dashboard
+│   │   └── AppointmentList.jsx   # Appointments table
+│   ├── services/
+│   │   └── api.js                # Axios instance
+│   ├── App.jsx                   # Main app component
+│   └── main.jsx                  # Entry point
+├── index.html
+├── vite.config.js
+└── package.json
+```
+
+## Technologies Used
+
+- **React 18** - UI library
+- **Material UI** - Component library
+- **React Router** - Routing
+- **Axios** - HTTP client
+- **Vite** - Build tool
+
+## API Integration
+
+The frontend connects to the backend API at `/api/*` (proxied through Vite).
+
+All API requests include JWT token in the Authorization header.
+
+## Auto-Refresh
+
+The queue display automatically refreshes every 15 seconds to show real-time updates.
