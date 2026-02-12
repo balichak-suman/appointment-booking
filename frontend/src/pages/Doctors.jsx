@@ -32,6 +32,16 @@ const Doctors = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // Add Doctor State
+    const [openDialog, setOpenDialog] = useState(false);
+    const [newDoctor, setNewDoctor] = useState({
+        name: '',
+        specialization: '',
+        email: '',
+        phone: '',
+        experience: 0
+    });
+
     const fetchData = async () => {
         try {
             const [summaryRes, doctorsRes] = await Promise.all([
@@ -82,16 +92,6 @@ const Doctors = () => {
             completed: stats?.completed || 0,
             waiting: stats?.waiting || 0
         };
-    });
-
-    // Add Doctor State
-    const [openDialog, setOpenDialog] = useState(false);
-    const [newDoctor, setNewDoctor] = useState({
-        name: '',
-        specialization: '',
-        email: '',
-        phone: '',
-        experience: 0
     });
 
     const handleCreateOpen = () => setOpenDialog(true);
