@@ -3,6 +3,7 @@ import { Card, CardContent, Box, Typography, Avatar, Chip } from '@mui/material'
 import { MedicalServices } from '@mui/icons-material';
 
 const DoctorCard = ({ doctor }) => {
+    if (!doctor) return null;
     const { name, department, totalAppointments = 0, completed = 0, waiting = 0 } = doctor;
 
     const completionRate = totalAppointments > 0 ? Math.round((completed / totalAppointments) * 100) : 0;
