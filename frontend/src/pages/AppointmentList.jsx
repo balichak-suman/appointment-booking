@@ -41,6 +41,7 @@ const AppointmentList = () => {
 
     // Manual Appointment State
     const [openDialog, setOpenDialog] = useState(false);
+    const [selectedDepartment, setSelectedDepartment] = useState('');
     const [newAppointment, setNewAppointment] = useState({
         patient_name: '',
         patient_phone: '',
@@ -49,6 +50,14 @@ const AppointmentList = () => {
         time: '09:00',
         reason: ''
     });
+
+    // Get unique departments
+    const departments = [...new Set(doctors.map(d => d.specialization))];
+
+    // Filter doctors by department
+    const filteredDoctors = selectedDepartment
+        ? doctors.filter(d => d.specialization === selectedDepartment)
+        : doctors;
 
     const fetchData = async () => {
         try {
@@ -145,6 +154,7 @@ const AppointmentList = () => {
                 time: '09:00',
                 reason: ''
             });
+            setSelectedDepartment('');
         } catch (err) {
             console.error('Failed to create appointment:', err);
             alert(err.response?.data?.detail || 'Failed to create appointment');
@@ -359,11 +369,31 @@ const AppointmentList = () => {
                             <TextField
                                 fullWidth
                                 select
+                                label="Department"
+                                value={selectedDepartment}
+                                onChange={(e) => {
+                                    setSelectedDepartment(e.target.value);
+                                    setNewAppointment({ ...newAppointment, doctor_id: '' }); // Reset doctor
+                                }}
+                            >
+                                <MenuItem value="">All Departments</MenuItem>
+                                {departments.map((dept) => (
+                                    <MenuItem key={dept} value={dept}>
+                                        {dept}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                select
                                 label="Doctor"
                                 value={newAppointment.doctor_id}
                                 onChange={(e) => setNewAppointment({ ...newAppointment, doctor_id: e.target.value })}
+                                disabled={!selectedDepartment && departments.length > 0}
                             >
-                                {doctors.map((doctor) => (
+                                {filteredDoctors.map((doctor) => (
                                     <MenuItem key={doctor.id} value={doctor.id}>
                                         {doctor.name} - {doctor.specialization}
                                     </MenuItem>
