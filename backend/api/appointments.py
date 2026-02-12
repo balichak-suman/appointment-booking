@@ -94,7 +94,7 @@ class AppointmentCreate(BaseModel):
     reason: Optional[str] = None
     status: str = "Booked"
 
-@router.post("/")
+@router.post("")
 def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get_db)):
     try:
         # Fetch doctor details automatically
