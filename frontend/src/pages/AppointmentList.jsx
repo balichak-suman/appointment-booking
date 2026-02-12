@@ -91,6 +91,7 @@ const AppointmentList = () => {
     const getStatusColor = (status) => {
         const colors = {
             'Booked': 'primary',
+            'Confirmed': 'primary',
             'Checked In': 'warning',
             'In Consultation': 'secondary',
             'Completed': 'success',
@@ -171,6 +172,7 @@ const AppointmentList = () => {
                             >
                                 <MenuItem value="">All Statuses</MenuItem>
                                 <MenuItem value="Booked">Booked</MenuItem>
+                                <MenuItem value="Confirmed">Confirmed</MenuItem>
                                 <MenuItem value="Checked In">Checked In</MenuItem>
                                 <MenuItem value="In Consultation">In Consultation</MenuItem>
                                 <MenuItem value="Completed">Completed</MenuItem>
