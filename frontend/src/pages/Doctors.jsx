@@ -247,7 +247,16 @@ const Doctors = () => {
                                 label="Google Calendar ID (Optional)"
                                 value={newDoctor.google_calendar_id || ''}
                                 onChange={(e) => setNewDoctor({ ...newDoctor, google_calendar_id: e.target.value })}
-                                helperText="e.g. physician@clinic.com or randomstring@group.calendar.google.com"
+                                helperText={
+                                    <span>
+                                        Calendar ID (e.g., email@gmail.com).
+                                        <br />
+                                        <strong>Important:</strong> Share your calendar with:
+                                        <code style={{ backgroundColor: '#f5f5f5', padding: '2px 4px', borderRadius: '4px', display: 'block', wordBreak: 'break-all', marginTop: '4px' }}>
+                                            appointment-bot@airy-period-486906-a4.iam.gserviceaccount.com
+                                        </code>
+                                    </span>
+                                }
                             />
                         </Grid>
                     </Grid>

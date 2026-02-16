@@ -4,6 +4,21 @@ This guide explains how to view your appointments and manage your availability u
 
 ---
 
+## 🔗 Link Google Calendar (Critical Step)
+For the system to add appointments to your calendar, you **MUST** share it with our Service Account.
+
+1.  **Create a New Calendar** (or use an existing one) in your Google Calendar.
+2.  Go to **Settings and sharing** for that specific calendar.
+3.  Scroll to **"Share with specific people or groups"**.
+4.  Click **+ Add people and groups**.
+5.  Paste this email address:
+    `appointment-bot@airy-period-486906-a4.iam.gserviceaccount.com`
+6.  Set permissions to **"Make changes to events"**.
+7.  Click **Send**.
+8.  Copy the **Calendar ID** (found near the bottom of settings) and paste it when adding a new doctor in the dashboard.
+
+---
+
 ## 📅 Viewing Appointments
 
 All appointments booked through WhatsApp will automatically appear in your **Google Calendar**.
