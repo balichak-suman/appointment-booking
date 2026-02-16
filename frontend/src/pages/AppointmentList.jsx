@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
     Box,
     Card,
@@ -30,14 +31,17 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const AppointmentList = () => {
+    const [searchParams] = useSearchParams();
     const [appointments, setAppointments] = useState([]);
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // Initialize filters from URL params or defaults
     const [filters, setFilters] = useState({
-        date: new Date().toISOString().split('T')[0],
-        doctorId: '',
-        status: ''
+        date: searchParams.get('date') || new Date().toISOString().split('T')[0],
+        doctorId: searchParams.get('doctorId') || '',
+        status: searchParams.get('status') || ''
     });
     const [anchorEl, setAnchorEl] = useState(null);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
