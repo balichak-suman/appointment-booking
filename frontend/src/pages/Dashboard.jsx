@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Grid,
@@ -71,13 +72,30 @@ const Dashboard = () => {
         return <Alert severity="error">{error}</Alert>;
     }
 
+    const navigate = useNavigate();
+
+    const handleCardClick = (status) => {
+        const today = new Date().toISOString().split('T')[0];
+        let params = `date=${today}`;
+
+        if (status === 'Total Today') {
+            // No status filter, just date
+        } else if (status === 'In Progress') {
+            params += `&status=Checked In,In Consultation`;
+        } else {
+            params += `&status=${status}`;
+        }
+
+        navigate(`/appointments?${params}`);
+    };
+
     const statusCards = [
-        { label: 'Total Today', value: summary?.summary?.total || 0, color: '#38B2AC', icon: <EventAvailable /> },
-        { label: 'Completed', value: summary?.summary?.completed || 0, color: '#48BB78', icon: <CheckCircle /> },
-        { label: 'In Progress', value: (summary?.summary?.checkedIn || 0) + (summary?.summary?.inConsultation || 0), color: '#ED8936', icon: <MedicalServices /> },
-        { label: 'Pending', value: summary?.summary?.booked || 0, color: '#4299E1', icon: <HourglassEmpty /> },
-        { label: 'Cancelled', value: summary?.summary?.cancelled || 0, color: '#A0AEC0', icon: <Cancel /> },
-        { label: 'No Show', value: summary?.summary?.noShow || 0, color: '#F56565', icon: <PersonOff /> },
+        { label: 'Total Today', value: summary?.summary?.total || 0, color: '#38B2AC', icon: <EventAvailable />, onClick: () => handleCardClick('Total Today') },
+        { label: 'Completed', value: summary?.summary?.completed || 0, color: '#48BB78', icon: <CheckCircle />, onClick: () => handleCardClick('Completed') },
+        { label: 'In Progress', value: (summary?.summary?.checkedIn || 0) + (summary?.summary?.inConsultation || 0), color: '#ED8936', icon: <MedicalServices />, onClick: () => handleCardClick('In Progress') },
+        { label: 'Pending', value: summary?.summary?.booked || 0, color: '#4299E1', icon: <HourglassEmpty />, onClick: () => handleCardClick('Booked') }, // Map Pending -> Booked
+        { label: 'Cancelled', value: summary?.summary?.cancelled || 0, color: '#A0AEC0', icon: <Cancel />, onClick: () => handleCardClick('Cancelled') },
+        { label: 'No Show', value: summary?.summary?.noShow || 0, color: '#F56565', icon: <PersonOff />, onClick: () => handleCardClick('No Show') },
     ];
 
     const getStatusColor = (status) => {
@@ -113,6 +131,7 @@ const Dashboard = () => {
                             icon={card.icon}
                             color={card.color}
                             subtitle={index === 0 ? 'All appointments' : undefined}
+                            onClick={card.onClick}
                         />
                     </Grid>
                 ))}

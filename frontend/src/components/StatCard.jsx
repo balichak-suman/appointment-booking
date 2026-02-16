@@ -1,14 +1,16 @@
 import React from 'react';
 import { Card, CardContent, Box, Typography } from '@mui/material';
 
-const StatCard = ({ title, value, icon, color = '#38B2AC', trend, subtitle }) => {
+const StatCard = ({ title, value, icon, color = '#38B2AC', trend, subtitle, onClick }) => {
     return (
         <Card
+            onClick={onClick}
             sx={{
                 height: '100%',
                 background: `linear-gradient(135deg, ${color}10 0%, ${color}20 100%)`,
                 border: `1px solid ${color}30`,
                 transition: 'transform 0.2s, box-shadow 0.2s',
+                cursor: onClick ? 'pointer' : 'default',
                 '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
