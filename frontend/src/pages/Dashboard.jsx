@@ -73,7 +73,7 @@ const Dashboard = () => {
         return <Alert severity="error">{error}</Alert>;
     }
 
-    const navigate = useNavigate();
+
 
     const handleCardClick = (status) => {
         const today = new Date().toISOString().split('T')[0];
