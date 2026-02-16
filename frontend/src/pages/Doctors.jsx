@@ -54,7 +54,7 @@ const Doctors = () => {
                 api.get('/dashboard/summary'),
                 api.get('/doctors')
             ]);
-            setSummary(summaryRes.data);
+            setSummary(summaryRes.data.data);
             setDoctors(doctorsRes.data);
         } catch (err) {
             console.error('Failed to fetch data:', err);
@@ -105,12 +105,12 @@ const Doctors = () => {
     };
 
     const doctorsWithStats = doctors.map(doctor => {
-        const doctorAppointments = summary?.by_doctor?.find(d => d.doctor_id === doctor.id);
+        const doctorAppointments = summary?.doctorSummary?.find(d => d.doctorId === doctor.id);
         return {
             ...doctor,
-            total_appointments: doctorAppointments?.count || 0,
+            total_appointments: doctorAppointments?.totalAppointments || 0,
             completed_appointments: doctorAppointments?.completed || 0,
-            pending_appointments: doctorAppointments?.pending || 0
+            pending_appointments: doctorAppointments?.waiting || 0
         };
     });
 
@@ -158,7 +158,7 @@ const Doctors = () => {
                     <Grid item xs={12} md={3}>
                         <StatCard
                             title="Total Appointments"
-                            value={summary.total || 0}
+                            value={summary?.summary?.total || 0}
                             icon={<EventAvailable sx={{ fontSize: 40, color: 'info.main' }} />}
                             color="info"
                         />
@@ -166,7 +166,7 @@ const Doctors = () => {
                     <Grid item xs={12} md={3}>
                         <StatCard
                             title="Completed"
-                            value={summary.completed || 0}
+                            value={summary?.summary?.completed || 0}
                             icon={<CheckCircle sx={{ fontSize: 40, color: 'success.main' }} />}
                             color="success"
                         />
@@ -174,7 +174,7 @@ const Doctors = () => {
                     <Grid item xs={12} md={3}>
                         <StatCard
                             title="Pending"
-                            value={summary.pending || 0}
+                            value={(summary?.summary?.booked || 0) + (summary?.summary?.checkedIn || 0)}
                             icon={<HourglassEmpty sx={{ fontSize: 40, color: 'warning.main' }} />}
                             color="warning"
                         />
