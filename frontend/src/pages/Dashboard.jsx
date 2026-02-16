@@ -25,6 +25,7 @@ import CalendarWidget from '../components/CalendarWidget';
 import DoctorCard from '../components/DoctorCard';
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const [summary, setSummary] = useState(null);
     const [queue, setQueue] = useState([]);
     const [loading, setLoading] = useState(true);
