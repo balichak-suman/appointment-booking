@@ -171,8 +171,8 @@ const Doctors = () => {
                 Add Doctor
             </Button>
         </DialogActions>
-    </Dialog >
-        </Box >
+    </Dialog>
+    </Box >
     );
 };
 
