@@ -19,7 +19,11 @@ def get_appointments(
     query = db.query(Appointment)
     
     if status and status != "All Statuses":
-        query = query.filter(Appointment.status == status)
+        if ',' in status:
+            status_list = [s.strip() for s in status.split(',')]
+            query = query.filter(Appointment.status.in_(status_list))
+        else:
+            query = query.filter(Appointment.status == status)
     
     if date:
         from datetime import datetime
