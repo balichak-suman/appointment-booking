@@ -26,15 +26,44 @@ import {
 import api from '../services/api';
 import StatCard from '../components/StatCard';
 import DoctorCard from '../components/DoctorCard';
-
 import { useAuth } from '../context/AuthContext';
 
 const Doctors = () => {
     const { isAdmin } = useAuth();
     const [summary, setSummary] = useState(null);
-    // ... (rest of state)
+    const [doctors, setDoctors] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [newDoctor, setNewDoctor] = useState({
+        name: '',
+        specialization: '',
+        experience: 0,
+        email: '',
+        phone: '',
+        google_calendar_id: ''
+    });
 
-    // ... (fetchData)
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const [summaryRes, doctorsRes] = await Promise.all([
+                api.get('/appointments/summary'),
+                api.get('/doctors')
+            ]);
+            setSummary(summaryRes.data);
+            setDoctors(doctorsRes.data);
+        } catch (err) {
+            console.error('Failed to fetch data:', err);
+            setError('Failed to load doctors data');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleDelete = async (doctorId) => {
         if (!window.confirm("Are you sure you want to delete this doctor? This action cannot be undone.")) {
@@ -43,7 +72,6 @@ const Doctors = () => {
 
         try {
             await api.delete(`/doctors/${doctorId}`);
-            // Optimistic update or refresh
             setDoctors(prev => prev.filter(d => d.id !== doctorId));
             alert("Doctor deleted successfully");
         } catch (err) {
@@ -52,129 +80,227 @@ const Doctors = () => {
         }
     };
 
-    // ... (rest of render)
-    {/* Doctors List */ }
-    <Card>
-        <CardContent>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-                All Doctors ({doctorsWithStats.length})
-            </Typography>
+    const handleCreateOpen = () => setOpenDialog(true);
+    const handleCreateClose = () => {
+        setOpenDialog(false);
+        setNewDoctor({
+            name: '',
+            specialization: '',
+            experience: 0,
+            email: '',
+            phone: '',
+            google_calendar_id: ''
+        });
+    };
 
-            {doctorsWithStats.length === 0 ? (
-                <Box sx={{ py: 8, textAlign: 'center' }}>
-                    <Typography variant="body1" color="text.secondary">
-                        No doctors found
-                    </Typography>
-                </Box>
-            ) : (
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                    {doctorsWithStats.map((doctor) => (
-                        <Grid item xs={12} md={6} key={doctor.id}>
-                            <DoctorCard
-                                doctor={doctor}
-                                onDelete={isAdmin ? handleDelete : undefined}
-                            />
-                        </Grid>
-                    ))}
+    const handleCreateSubmit = async () => {
+        try {
+            const response = await api.post('/doctors', newDoctor);
+            setDoctors([...doctors, response.data]);
+            handleCreateClose();
+            alert('Doctor added successfully');
+        } catch (err) {
+            console.error('Failed to create doctor:', err);
+            alert('Failed to add doctor');
+        }
+    };
+
+    const doctorsWithStats = doctors.map(doctor => {
+        const doctorAppointments = summary?.by_doctor?.find(d => d.doctor_id === doctor.id);
+        return {
+            ...doctor,
+            total_appointments: doctorAppointments?.count || 0,
+            completed_appointments: doctorAppointments?.completed || 0,
+            pending_appointments: doctorAppointments?.pending || 0
+        };
+    });
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="error">{error}</Alert>
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h4" fontWeight={700}>
+                    Doctors
+                </Typography>
+                <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={handleCreateOpen}
+                >
+                    Add Doctor
+                </Button>
+            </Box>
+
+            {summary && (
+                <Grid container spacing={3} sx={{ mb: 3 }}>
+                    <Grid item xs={12} md={3}>
+                        <StatCard
+                            title="Total Doctors"
+                            value={doctors.length}
+                            icon={<MedicalServices sx={{ fontSize: 40, color: 'primary.main' }} />}
+                            color="primary"
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                        <StatCard
+                            title="Total Appointments"
+                            value={summary.total || 0}
+                            icon={<EventAvailable sx={{ fontSize: 40, color: 'info.main' }} />}
+                            color="info"
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                        <StatCard
+                            title="Completed"
+                            value={summary.completed || 0}
+                            icon={<CheckCircle sx={{ fontSize: 40, color: 'success.main' }} />}
+                            color="success"
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={3}>
+                        <StatCard
+                            title="Pending"
+                            value={summary.pending || 0}
+                            icon={<HourglassEmpty sx={{ fontSize: 40, color: 'warning.main' }} />}
+                            color="warning"
+                        />
+                    </Grid>
                 </Grid>
             )}
-        </CardContent>
-    </Card>
 
-    {/* Add Doctor Dialog */ }
-    <Dialog open={openDialog} onClose={handleCreateClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Add New Doctor</DialogTitle>
-        <DialogContent>
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12}>
-                    <TextField
-                        fullWidth
-                        label="Doctor Name"
-                        value={newDoctor.name}
-                        onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        fullWidth
-                        select
-                        label="Specialization (Department)"
-                        value={newDoctor.specialization}
-                        onChange={(e) => setNewDoctor({ ...newDoctor, specialization: e.target.value })}
-                        SelectProps={{
-                            native: false,
-                        }}
-                    >
-                        {/* Extract unique departments from doctors list */}
-                        {[...new Set(doctors.map(d => d.specialization))].sort().map((dept) => (
-                            <MenuItem key={dept} value={dept}>
-                                {dept}
-                            </MenuItem>
-                        ))}
-                        <MenuItem value="General Physician">General Physician</MenuItem>
-                        <MenuItem value="Cardiologist">Cardiologist</MenuItem>
-                        <MenuItem value="Dermatologist">Dermatologist</MenuItem>
-                        <MenuItem value="Pediatrician">Pediatrician</MenuItem>
-                        <MenuItem value="Neurologist">Neurologist</MenuItem>
-                        <MenuItem value="Orthopedic">Orthopedic</MenuItem>
-                    </TextField>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        fullWidth
-                        label="Experience (Years)"
-                        type="number"
-                        value={newDoctor.experience}
-                        onChange={(e) => setNewDoctor({ ...newDoctor, experience: parseInt(e.target.value) || 0 })}
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        fullWidth
-                        label="Email"
-                        type="email"
-                        value={newDoctor.email}
-                        onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })}
-                    />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                    <TextField
-                        fullWidth
-                        label="Phone"
-                        value={newDoctor.phone}
-                        onChange={(e) => setNewDoctor({ ...newDoctor, phone: e.target.value })}
-                    />
-                </Grid>
-                <Grid item xs={12}>
-                    <TextField
-                        fullWidth
-                        label="Google Calendar ID (Optional)"
-                        value={newDoctor.google_calendar_id || ''}
-                        onChange={(e) => setNewDoctor({ ...newDoctor, google_calendar_id: e.target.value })}
-                        helperText={
-                            <span>
-                                Calendar ID (e.g., email@gmail.com).
-                                <br />
-                                <strong>Important:</strong> Share your calendar with:
-                                <code style={{ backgroundColor: '#f5f5f5', padding: '2px 4px', borderRadius: '4px', display: 'block', wordBreak: 'break-all', marginTop: '4px' }}>
-                                    appointment-bot@airy-period-486906-a4.iam.gserviceaccount.com
-                                </code>
-                            </span>
-                        }
-                    />
-                </Grid>
-            </Grid>
-        </DialogContent>
-        <DialogActions>
-            <Button onClick={handleCreateClose}>Cancel</Button>
-            <Button onClick={handleCreateSubmit} variant="contained" disabled={!newDoctor.name || !newDoctor.specialization || !newDoctor.email}>
-                Add Doctor
-            </Button>
-        </DialogActions>
-    </Dialog>
-    </Box>
+            <Card>
+                <CardContent>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                        All Doctors ({doctorsWithStats.length})
+                    </Typography>
+
+                    {doctorsWithStats.length === 0 ? (
+                        <Box sx={{ py: 8, textAlign: 'center' }}>
+                            <Typography variant="body1" color="text.secondary">
+                                No doctors found
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                            {doctorsWithStats.map((doctor) => (
+                                <Grid item xs={12} md={6} key={doctor.id}>
+                                    <DoctorCard
+                                        doctor={doctor}
+                                        onDelete={isAdmin ? handleDelete : undefined}
+                                    />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Dialog open={openDialog} onClose={handleCreateClose} maxWidth="sm" fullWidth>
+                <DialogTitle>Add New Doctor</DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Doctor Name"
+                                value={newDoctor.name}
+                                onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                select
+                                label="Specialization (Department)"
+                                value={newDoctor.specialization}
+                                onChange={(e) => setNewDoctor({ ...newDoctor, specialization: e.target.value })}
+                                SelectProps={{
+                                    native: false,
+                                }}
+                            >
+                                {[...new Set(doctors.map(d => d.specialization))].sort().map((dept) => (
+                                    <MenuItem key={dept} value={dept}>
+                                        {dept}
+                                    </MenuItem>
+                                ))}
+                                <MenuItem value="General Physician">General Physician</MenuItem>
+                                <MenuItem value="Cardiologist">Cardiologist</MenuItem>
+                                <MenuItem value="Dermatologist">Dermatologist</MenuItem>
+                                <MenuItem value="Pediatrician">Pediatrician</MenuItem>
+                                <MenuItem value="Neurologist">Neurologist</MenuItem>
+                                <MenuItem value="Orthopedic">Orthopedic</MenuItem>
+                            </TextField>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Experience (Years)"
+                                type="number"
+                                value={newDoctor.experience}
+                                onChange={(e) => setNewDoctor({ ...newDoctor, experience: parseInt(e.target.value) || 0 })}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Email"
+                                type="email"
+                                value={newDoctor.email}
+                                onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Phone"
+                                value={newDoctor.phone}
+                                onChange={(e) => setNewDoctor({ ...newDoctor, phone: e.target.value })}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Google Calendar ID (Optional)"
+                                value={newDoctor.google_calendar_id || ''}
+                                onChange={(e) => setNewDoctor({ ...newDoctor, google_calendar_id: e.target.value })}
+                                helperText={
+                                    <span>
+                                        Calendar ID (e.g., email@gmail.com).
+                                        <br />
+                                        <strong>Important:</strong> Share your calendar with:
+                                        <code style={{ backgroundColor: '#f5f5f5', padding: '2px 4px', borderRadius: '4px', display: 'block', wordBreak: 'break-all', marginTop: '4px' }}>
+                                            appointment-bot@airy-period-486906-a4.iam.gserviceaccount.com
+                                        </code>
+                                    </span>
+                                }
+                            />
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCreateClose}>Cancel</Button>
+                    <Button onClick={handleCreateSubmit} variant="contained" disabled={!newDoctor.name || !newDoctor.specialization || !newDoctor.email}>
+                        Add Doctor
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
     );
 };
 
-// Force rebuild
 export default Doctors;
