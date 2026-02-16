@@ -54,11 +54,13 @@ const Doctors = () => {
                 api.get('/dashboard/summary'),
                 api.get('/doctors')
             ]);
-            setSummary(summaryRes.data.data);
-            setDoctors(doctorsRes.data.data);
+            setSummary(summaryRes.data.data || {});
+            const doctorsData = doctorsRes.data.data;
+            setDoctors(Array.isArray(doctorsData) ? doctorsData : []);
         } catch (err) {
             console.error('Failed to fetch data:', err);
             setError('Failed to load doctors data');
+            setDoctors([]); // Ensure doctors is always an array
         } finally {
             setLoading(false);
         }
