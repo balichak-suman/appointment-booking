@@ -23,7 +23,11 @@ def get_queue(db: Session = Depends(get_db)):
         Appointment.status.in_(["Booked", "Checked In", "In Consultation"])
     )
     
+    print(f"[DEBUG] Queue Request. Date: {today}")
     appointments = query.all()
+    print(f"[DEBUG] Found {len(appointments)} appointments for today.")
+    for apt in appointments:
+         print(f" - ID: {apt.id}, Status: {apt.status}, Doc: {apt.doctor_name}")
     
     formatted_queue = []
     for apt in appointments:
