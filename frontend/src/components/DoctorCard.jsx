@@ -1,10 +1,9 @@
-import React from 'react';
-import { Card, CardContent, Box, Typography, Avatar, Chip } from '@mui/material';
-import { MedicalServices } from '@mui/icons-material';
+import { IconButton, Tooltip } from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 
-const DoctorCard = ({ doctor }) => {
+const DoctorCard = ({ doctor, onDelete }) => {
     if (!doctor) return null;
-    const { name, department, totalAppointments = 0, completed = 0, waiting = 0 } = doctor;
+    const { id, name, department, totalAppointments = 0, completed = 0, waiting = 0 } = doctor;
 
     const completionRate = totalAppointments > 0 ? Math.round((completed / totalAppointments) * 100) : 0;
 
@@ -12,6 +11,7 @@ const DoctorCard = ({ doctor }) => {
         <Card
             sx={{
                 height: '100%',
+                position: 'relative',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
                     transform: 'translateY(-2px)',
@@ -19,6 +19,26 @@ const DoctorCard = ({ doctor }) => {
                 },
             }}
         >
+            {onDelete && (
+                <Tooltip title="Delete Doctor">
+                    <IconButton
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(id);
+                        }}
+                        sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            color: 'text.secondary',
+                            '&:hover': { color: 'error.main', bgcolor: 'error.lighter' }
+                        }}
+                    >
+                        <DeleteIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+            )}
             <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                     <Avatar

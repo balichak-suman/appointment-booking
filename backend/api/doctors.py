@@ -85,3 +85,22 @@ def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
         db.rollback()
         print(f"Error creating doctor: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/{doctor_id}")
+def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
+    try:
+        doctor = db.query(Doctor).filter(Doctor.id == doctor_id).first()
+        if not doctor:
+            raise HTTPException(status_code=404, detail="Doctor not found")
+            
+        # Optional: Check for active appointments? For now, we allow deletion.
+        # Ideally we should handle associated appointments (set doctor_id to null or delete)
+        # Assuming simple deletion is what's requested.
+        
+        db.delete(doctor)
+        db.commit()
+        return {"success": True, "message": "Doctor deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting doctor: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
