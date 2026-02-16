@@ -10,7 +10,20 @@ class LoginRequest(BaseModel):
 @router.post("/login")
 def login(request: LoginRequest):
     # Mock authentication for demo purposes
-    if request.username == "admin" and request.password == "admin123":
+    if request.username == "root" and request.password == "root":
+        return {
+            "success": True,
+            "data": {
+                "token": "mock-jwt-token-root",
+                "user": {
+                    "id": 0,
+                    "username": "root",
+                    "role": "admin",
+                    "name": "Super Admin"
+                }
+            }
+        }
+    elif request.username == "admin" and request.password == "admin123":
         return {
             "success": True,
             "data": {
