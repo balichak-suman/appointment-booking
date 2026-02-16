@@ -1,4 +1,4 @@
-import { IconButton, Tooltip } from '@mui/material';
+import { Card, CardContent, IconButton, Tooltip } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 
 const DoctorCard = ({ doctor, onDelete }) => {
