@@ -51,7 +51,7 @@ const Doctors = () => {
         try {
             setLoading(true);
             const [summaryRes, doctorsRes] = await Promise.all([
-                api.get('/appointments/summary'),
+                api.get('/dashboard/summary'),
                 api.get('/doctors')
             ]);
             setSummary(summaryRes.data);
