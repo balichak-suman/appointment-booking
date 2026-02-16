@@ -13,7 +13,9 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField
+    DialogActions,
+    TextField,
+    MenuItem
 } from '@mui/material';
 import {
     CheckCircle,
@@ -192,10 +194,27 @@ const Doctors = () => {
                         <Grid item xs={12} sm={6}>
                             <TextField
                                 fullWidth
+                                select
                                 label="Specialization (Department)"
                                 value={newDoctor.specialization}
                                 onChange={(e) => setNewDoctor({ ...newDoctor, specialization: e.target.value })}
-                            />
+                                SelectProps={{
+                                    native: false,
+                                }}
+                            >
+                                {/* Extract unique departments from doctors list */}
+                                {[...new Set(doctors.map(d => d.specialization))].sort().map((dept) => (
+                                    <MenuItem key={dept} value={dept}>
+                                        {dept}
+                                    </MenuItem>
+                                ))}
+                                <MenuItem value="General Physician">General Physician</MenuItem>
+                                <MenuItem value="Cardiologist">Cardiologist</MenuItem>
+                                <MenuItem value="Dermatologist">Dermatologist</MenuItem>
+                                <MenuItem value="Pediatrician">Pediatrician</MenuItem>
+                                <MenuItem value="Neurologist">Neurologist</MenuItem>
+                                <MenuItem value="Orthopedic">Orthopedic</MenuItem>
+                            </TextField>
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <TextField

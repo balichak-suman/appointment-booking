@@ -53,7 +53,7 @@ class DoctorCreate(BaseModel):
     working_hours_end: str = "17:00"
     working_days: str = "Monday,Tuesday,Wednesday,Thursday,Friday"
 
-@router.post("/")
+@router.post("")
 def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
     try:
         # Check if email already exists
