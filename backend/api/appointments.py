@@ -121,6 +121,11 @@ def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get
             type="Scheduled",
             booking_source="Dashboard"
         )
+
+        # Validate appointment time is not in the past
+        appointment_datetime = datetime.combine(new_appointment.date, datetime.strptime(new_appointment.time, "%H:%M").time())
+        if appointment_datetime < datetime.now():
+            raise HTTPException(status_code=400, detail="Cannot book appointments in the past")
         
         db.add(new_appointment)
         db.commit()

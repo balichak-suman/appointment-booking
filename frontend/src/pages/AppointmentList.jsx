@@ -148,6 +148,13 @@ const AppointmentList = () => {
     const handleCreateClose = () => setOpenDialog(false);
 
     const handleCreateSubmit = async () => {
+        // Validate past date/time
+        const selectedDateTime = new Date(`${newAppointment.date}T${newAppointment.time}`);
+        if (selectedDateTime < new Date()) {
+            alert("Cannot book appointments in the past.");
+            return;
+        }
+
         try {
             await api.post('/appointments', newAppointment);
             setOpenDialog(false);
