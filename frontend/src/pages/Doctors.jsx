@@ -55,7 +55,7 @@ const Doctors = () => {
                 api.get('/doctors')
             ]);
             setSummary(summaryRes.data.data);
-            setDoctors(doctorsRes.data);
+            setDoctors(doctorsRes.data.data);
         } catch (err) {
             console.error('Failed to fetch data:', err);
             setError('Failed to load doctors data');
