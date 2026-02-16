@@ -241,6 +241,15 @@ const Doctors = () => {
                                 onChange={(e) => setNewDoctor({ ...newDoctor, phone: e.target.value })}
                             />
                         </Grid>
+                        <Grid item xs={12}>
+                            <TextField
+                                fullWidth
+                                label="Google Calendar ID (Optional)"
+                                value={newDoctor.google_calendar_id || ''}
+                                onChange={(e) => setNewDoctor({ ...newDoctor, google_calendar_id: e.target.value })}
+                                helperText="e.g. physician@clinic.com or randomstring@group.calendar.google.com"
+                            />
+                        </Grid>
                     </Grid>
                 </DialogContent>
                 <DialogActions>

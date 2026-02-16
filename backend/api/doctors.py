@@ -52,6 +52,7 @@ class DoctorCreate(BaseModel):
     working_hours_start: str = "09:00"
     working_hours_end: str = "17:00"
     working_days: str = "Monday,Tuesday,Wednesday,Thursday,Friday"
+    google_calendar_id: Optional[str] = None
 
 @router.post("")
 def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
@@ -70,6 +71,7 @@ def create_doctor(doctor: DoctorCreate, db: Session = Depends(get_db)):
             working_hours_start=doctor.working_hours_start,
             working_hours_end=doctor.working_hours_end,
             working_days=doctor.working_days,
+            google_calendar_id=doctor.google_calendar_id,
             status="Available"
         )
         
