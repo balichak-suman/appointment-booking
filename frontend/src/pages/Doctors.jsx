@@ -172,7 +172,7 @@ const Doctors = () => {
             </Button>
         </DialogActions>
     </Dialog>
-    </Box >
+    </Box>
     );
 };
 
