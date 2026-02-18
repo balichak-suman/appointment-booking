@@ -24,7 +24,8 @@ import {
     Menu,
     MenuItem as MenuOption,
     CircularProgress,
-    Alert
+    Alert,
+    Divider
 } from '@mui/material';
 import { MoreVert, WhatsApp, Phone, Person, Add } from '@mui/icons-material';
 import api from '../services/api';
@@ -113,6 +114,17 @@ const AppointmentList = () => {
         } catch (err) {
             console.error('Failed to update status:', err);
             alert(err.response?.data?.message || 'Failed to update status');
+        }
+    };
+
+    const handleSendReminder = async () => {
+        try {
+            const response = await api.post(`/appointments/${selectedAppointment.id}/remind`);
+            alert(response.data.message || 'Reminder sent successfully!');
+            handleMenuClose();
+        } catch (err) {
+            console.error('Failed to send reminder:', err);
+            alert(err.response?.data?.detail || 'Failed to send reminder');
         }
     };
 
@@ -350,6 +362,13 @@ const AppointmentList = () => {
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
             >
+                {selectedAppointment && (
+                    <MenuOption onClick={handleSendReminder}>
+                        <WhatsApp fontSize="small" sx={{ mr: 1, color: 'success.main' }} />
+                        Send Reminder
+                    </MenuOption>
+                )}
+                <Divider />
                 {selectedAppointment && getAvailableStatusTransitions(selectedAppointment.status).map((status) => (
                     <MenuOption key={status} onClick={() => handleStatusChange(status)}>
                         Update to: {status}

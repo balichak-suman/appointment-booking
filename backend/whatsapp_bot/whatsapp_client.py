@@ -109,6 +109,44 @@ class WhatsAppClient:
             print(f"Error sending interactive buttons: {error}")
             if hasattr(error, 'response') and error.response is not None:
                 print(f"Response: {error.response.text}")
+    def send_template(self, to: str, template_name: str, language_code: str = "en_US", components: list = None):
+        """
+        Send a WhatsApp Template Message
+        
+        components format:
+        [
+            {
+                "type": "body",
+                "parameters": [
+                    {"type": "text", "text": "value1"},
+                    {"type": "text", "text": "value2"}
+                ]
+            }
+        ]
+        """
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": to,
+            "type": "template",
+            "template": {
+                "name": template_name,
+                "language": {"code": language_code}
+            }
+        }
+
+        if components:
+            payload["template"]["components"] = components
+        
+        print(f"Sending Template '{template_name}' to {to}")
+        
+        try:
+            response = requests.post(self.api_url, headers=self.headers, json=payload)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as error:
+            print(f"Error sending template: {error}")
+            if hasattr(error, 'response') and error.response is not None:
+                print(f"Response: {error.response.text}")
             raise
 
 whatsapp_client = WhatsAppClient()

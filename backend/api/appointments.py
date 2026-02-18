@@ -150,8 +150,60 @@ def create_appointment(appointment: AppointmentCreate, db: Session = Depends(get
             print(f"Failed to sync to Google Calendar: {e}")
             # We do NOT rollback the DB transaction here because the appointment IS created in our system.
             # In a production system, we might want a background job to retry sync.
+            
+        # Send WhatsApp Confirmation Template
+        try:
+            from whatsapp_bot.whatsapp_client import whatsapp_client
+            from whatsapp_bot.templates import WhatsAppTemplates
+
+            if new_appointment.patient_phone:
+                components = WhatsAppTemplates.get_confirmation_components(
+                    patient_name=new_appointment.patient_name,
+                    doctor_name=new_appointment.doctor_name,
+                    date=new_appointment.date,
+                    time=new_appointment.time
+                )
+                whatsapp_client.send_template(
+                    to=new_appointment.patient_phone,
+                    template_name=WhatsAppTemplates.APPOINTMENT_CONFIRMATION,
+                    components=components
+                )
+                print(f"WhatsApp confirmation sent to {new_appointment.patient_phone}")
+        except Exception as e:
+            print(f"Failed to send WhatsApp confirmation: {e}")
+
         return {"success": True, "data": new_appointment, "message": "Appointment created successfully"}
     except Exception as e:
         db.rollback()
         print(f"Error creating appointment: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{appointment_id}/remind")
+def send_appointment_reminder(appointment_id: int, db: Session = Depends(get_db)):
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    if not appointment.patient_phone:
+        raise HTTPException(status_code=400, detail="Patient has no phone number")
+        
+    try:
+        from whatsapp_bot.whatsapp_client import whatsapp_client
+        from whatsapp_bot.templates import WhatsAppTemplates
+        
+        components = WhatsAppTemplates.get_reminder_components(
+            patient_name=appointment.patient_name,
+            doctor_name=appointment.doctor_name,
+            time=f"{appointment.date} at {appointment.time}"
+        )
+        
+        whatsapp_client.send_template(
+            to=appointment.patient_phone,
+            template_name=WhatsAppTemplates.APPOINTMENT_REMINDER,
+            components=components
+        )
+        
+        return {"success": True, "message": "Reminder sent successfully"}
+    except Exception as e:
+        print(f"Error sending reminder: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to send reminder: {str(e)}")
