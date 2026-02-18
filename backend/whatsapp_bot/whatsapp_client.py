@@ -10,16 +10,28 @@ class WhatsAppClient:
             "Content-Type": "application/json"
         }
     
+    def _format_phone_number(self, phone: str) -> str:
+        """Helper to format phone number to E.164 without +"""
+        clean_phone = ''.join(filter(str.isdigit, phone))
+        # Assuming India (91) if length is 10
+        if len(clean_phone) == 10:
+            return f"91{clean_phone}"
+        # If it starts with 0, remove it and add 91
+        if clean_phone.startswith('0') and len(clean_phone) == 11:
+             return f"91{clean_phone[1:]}"
+        return clean_phone
+
     def send_message(self, to: str, message: str):
         """Send a simple text message"""
+        formatted_to = self._format_phone_number(to)
         payload = {
             "messaging_product": "whatsapp",
-            "to": to,
+            "to": formatted_to,
             "type": "text",
             "text": {"body": message}
         }
         
-        print(f"Sending WhatsApp message to {to}: {message}")
+        print(f"Sending WhatsApp message to {formatted_to}: {message}")
         
         try:
             response = requests.post(self.api_url, headers=self.headers, json=payload)
@@ -60,7 +72,10 @@ class WhatsAppClient:
             }
         }
         
-        print(f"Sending interactive list to {to}")
+        formatted_to = self._format_phone_number(to)
+        payload["to"] = formatted_to
+        
+        print(f"Sending interactive list to {formatted_to}")
         
         try:
             response = requests.post(self.api_url, headers=self.headers, json=payload)
@@ -99,7 +114,10 @@ class WhatsAppClient:
             }
         }
         
-        print(f"Sending interactive buttons to {to}")
+        formatted_to = self._format_phone_number(to)
+        payload["to"] = formatted_to
+        
+        print(f"Sending interactive buttons to {formatted_to}")
         
         try:
             response = requests.post(self.api_url, headers=self.headers, json=payload)
@@ -134,10 +152,11 @@ class WhatsAppClient:
             }
         }
 
-        if components:
-            payload["template"]["components"] = components
+
+        formatted_to = self._format_phone_number(to)
+        payload["to"] = formatted_to
         
-        print(f"Sending Template '{template_name}' to {to}")
+        print(f"Sending Template '{template_name}' to {formatted_to}")
         
         try:
             response = requests.post(self.api_url, headers=self.headers, json=payload)
