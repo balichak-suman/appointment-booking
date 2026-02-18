@@ -20,3 +20,6 @@ api_router.include_router(doctors_router, prefix="/api/doctors", tags=["Doctors"
 api_router.include_router(patients_router, prefix="/api/patients", tags=["Patients"])
 api_router.include_router(appointments_router, prefix="/api/appointments", tags=["Appointments"])
 api_router.include_router(whatsapp_router, prefix="", tags=["WhatsApp"])
+
+from api.search import router as search_router
+api_router.include_router(search_router, prefix="/api/search", tags=["Search"])

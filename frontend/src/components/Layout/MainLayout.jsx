@@ -27,6 +27,7 @@ import {
     Menu as MenuIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import GlobalSearch from './GlobalSearch';
 
 const drawerWidth = 260;
 
@@ -162,6 +163,7 @@ const MainLayout = () => {
                     <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
                         {menuItems.find(item => item.path === location.pathname)?.text || 'Dashboard'}
                     </Typography>
+                    <GlobalSearch />
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Box sx={{ textAlign: 'right' }}>
                             <Typography variant="body2" fontWeight="600">
